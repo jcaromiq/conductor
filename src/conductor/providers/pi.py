@@ -100,6 +100,7 @@ class _PiRunState:
         session_id: pi session id from the session header (diagnostics).
         turns: Number of model-call cycles (turn_start events) seen.
         tool_calls: Number of tool executions started.
+        stderr_tail: Last line(s) of pi's stderr (for error messages).
         final_assistant: The most recent assistant message dict — the
             authoritative final answer with its own ``model``/``usage``/
             ``stopReason`` fields.
@@ -114,6 +115,7 @@ class _PiRunState:
     session_id: str | None = None
     turns: int = 0
     tool_calls: int = 0
+    stderr_tail: str = ""
     final_assistant: dict[str, Any] | None = None
     input_tokens: int = 0
     output_tokens: int = 0
@@ -436,9 +438,10 @@ class PiProvider(AgentProvider):
         final_message = state.final_assistant
         stop_reason = (final_message or {}).get("stopReason")
         if stop_reason in ("error", "aborted"):
+            detail = f" — {state.stderr_tail}" if state.stderr_tail else ""
             raise ProviderError(
                 f"pi agent execution for '{agent.name}' ended with stopReason="
-                f"{stop_reason!r} (model={(final_message or {}).get('model')!r}).",
+                f"{stop_reason!r} (model={(final_message or {}).get('model')!r}){detail}.",
             )
         final_text = _assistant_text(final_message)
         if final_text is None:
@@ -664,6 +667,7 @@ class PiProvider(AgentProvider):
                 + (f": {detail}" if detail else ", no stderr output."),
                 is_retryable=True,
             )
+        state.stderr_tail = tail[0].decode("utf-8", "replace").strip()
         return state
 
     async def _pump_events(
