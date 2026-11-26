@@ -14,9 +14,9 @@ from conductor.providers.capabilities import get_capabilities
 from conductor.providers.pi import (
     PI_AVAILABLE,
     PiProvider,
-    _PiRunState,
     _assistant_text,
     _handle_pi_event,
+    _PiRunState,
 )
 
 
@@ -62,9 +62,14 @@ class TestRegistrationAndCapabilities:
 class TestArgumentBuilding:
     def test_default_args_delegate_model_to_pi(self) -> None:
         provider = PiProvider()
-        args = provider._build_cli_args(_agent(), resolved_model=None, effort=None, no_tools=False)
+        args = provider._build_cli_args(_agent(), resolved_model=None, effort=None)
         assert args == ["--mode", "json", "--print", "--no-session", "--approve"]
         assert "--model" not in args and "--thinking" not in args
+
+    def test_explicit_empty_tools_maps_to_no_tools(self) -> None:
+        provider = PiProvider()
+        args = provider._build_cli_args(_agent(tools=[]), resolved_model=None, effort=None)
+        assert "--no-tools" in args
 
     def test_pinned_model_and_effort_are_forwarded(self) -> None:
         provider = PiProvider()
@@ -72,16 +77,15 @@ class TestArgumentBuilding:
             _agent(system_prompt="be terse"),
             resolved_model="glm-5-3",
             effort="high",
-            no_tools=True,
         )
         assert "--model" in args and args[args.index("--model") + 1] == "glm-5-3"
         assert "--thinking" in args and args[args.index("--thinking") + 1] == "high"
-        assert "--no-tools" in args
         assert "--system-prompt" in args and args[args.index("--system-prompt") + 1] == "be terse"
+        assert "--no-tools" not in args
 
     def test_approve_can_be_disabled(self) -> None:
         provider = PiProvider(approve_project=False)
-        args = provider._build_cli_args(_agent(), resolved_model=None, effort=None, no_tools=False)
+        args = provider._build_cli_args(_agent(), resolved_model=None, effort=None)
         assert "--approve" not in args
 
 
@@ -92,9 +96,20 @@ class TestEventMapping:
         events = [
             {"type": "session", "id": "s1"},
             {"type": "turn_start"},
-            {"type": "message_update", "assistantMessageEvent": {"type": "text_delta", "delta": "Ho"}},
-            {"type": "message_update", "assistantMessageEvent": {"type": "text_delta", "delta": "la"}},
-            {"type": "tool_execution_start", "toolCallId": "c1", "toolName": "bash", "args": {"command": "ls"}},
+            {
+                "type": "message_update",
+                "assistantMessageEvent": {"type": "text_delta", "delta": "Ho"},
+            },
+            {
+                "type": "message_update",
+                "assistantMessageEvent": {"type": "text_delta", "delta": "la"},
+            },
+            {
+                "type": "tool_execution_start",
+                "toolCallId": "c1",
+                "toolName": "bash",
+                "args": {"command": "ls"},
+            },
             {
                 "type": "tool_execution_end",
                 "toolCallId": "c1",
@@ -199,9 +214,8 @@ class TestExecuteNormalization:
         provider = self._provider()
         with patch.object(
             PiProvider, "_run_pi", AsyncMock(return_value=_state("x", stopReason="error"))
-        ):
-            with pytest.raises(ProviderError):
-                _run(provider.execute(_agent(), {}, "prompt"))
+        ), pytest.raises(ProviderError):
+            _run(provider.execute(_agent(), {}, "prompt"))
 
     def test_nonempty_tools_refused(self) -> None:
         provider = self._provider()

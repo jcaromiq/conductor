@@ -421,9 +421,7 @@ class PiProvider(AgentProvider):
                 "Return ONLY the JSON object, no other text."
             )
 
-        args = self._build_cli_args(
-            agent, resolved_model=resolved_model, effort=effort, no_tools=tools is not None
-        )
+        args = self._build_cli_args(agent, resolved_model=resolved_model, effort=effort)
 
         state = await self._run_pi(
             agent_name=agent.name,
@@ -495,19 +493,27 @@ class PiProvider(AgentProvider):
         *,
         resolved_model: str | None,
         effort: ReasoningEffort | None,
-        no_tools: bool,
     ) -> list[str]:
         """Build the pi command line for one execution.
 
         Args:
-            agent: Agent definition (system prompt).
+            agent: Agent definition (system prompt, raw ``tools`` list).
             resolved_model: Model to pin, or ``None`` to use pi's default.
             effort: Resolved thinking level, or ``None`` to leave pi's.
-            no_tools: ``True`` when the agent declared ``tools: []``.
 
         Returns:
             Argument list (the caller prepends the binary and pipes the
             prompt via stdin).
+
+        Note:
+            Tool selection follows the RAW ``agent.tools`` signal, not the
+            executor-resolved list, because ``resolve_agent_tools`` collapses
+            "agent omitted ``tools:``" and "the workflow declares none" into
+            the same empty list (the ambiguity is documented on
+            ``claude_agent_sdk._DEFAULT_TOOL_PRESET``). For this harness
+            provider the split matters: an omitted list means "run pi as the
+            user configured it" (its own tool set), while an explicit
+            ``tools: []`` is a real disable and maps to ``--no-tools``.
         """
         args = ["--mode", "json", "--print", "--no-session"]
         if resolved_model:
@@ -516,7 +522,7 @@ class PiProvider(AgentProvider):
             args += ["--thinking", effort]
         if agent.system_prompt:
             args += ["--system-prompt", agent.system_prompt]
-        if no_tools:
+        if agent.tools == []:
             args += ["--no-tools"]
         if self._approve_project:
             args += ["--approve"]
