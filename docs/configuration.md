@@ -11,7 +11,7 @@ The `runtime` section of your workflow defines provider settings and global defa
 ```yaml
 workflow:
   runtime:
-    provider: copilot  # or 'claude', 'claude-agent-sdk', 'hermes'
+    provider: copilot  # or 'claude', 'claude-agent-sdk', 'hermes', 'pi'
     default_model: gpt-5.2
     temperature: 0.7
     max_tokens: 4096
@@ -160,6 +160,27 @@ workflow:
 **Models**: `anthropic/claude-sonnet-4`, `openai/gpt-4o`, any OpenRouter `provider/model` string
 
 **See**: [Hermes Provider Documentation](providers/hermes.md)
+
+### Pi
+
+> **Experimental** — see [Experimental Providers](providers/experimental.md) for stability policy.
+
+Runs each agent step inside the user's own [`pi`](https://pi.dev) coding
+agent as a one-shot subprocess. **Model selection is delegated to pi**: the
+`--model` flag is only passed when the workflow or agent pins one, and with
+nothing pinned pi uses its own configured default — so the same workflow
+runs on whatever providers each user's pi is set up with. Requires the pi
+CLI installed and logged in. No structured provider settings: pi owns its
+endpoints and credentials.
+
+```yaml
+workflow:
+  runtime:
+    provider: pi
+    # default_model: glm-5-3   # optional; omit to use pi's own default
+```
+
+**See**: [Pi Provider Documentation](providers/pi.md)
 
 ### Custom Provider Routing (Ollama / vLLM / Azure OpenAI)
 

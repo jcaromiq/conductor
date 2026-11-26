@@ -1,7 +1,7 @@
 # Providers
 
 The shared contract every agent provider (`copilot`, `claude`, `openai`, `claude-agent-sdk`,
-`hermes`, `aca`) must honor: lifecycle, capability declarations, events, output and usage
+`hermes`, `aca`, `pi`) must honor: lifecycle, capability declarations, events, output and usage
 accounting, recovery, and how a new provider is registered. Provider-specific deep notes live in
 [providers/copilot.md](providers/copilot.md) and
 [providers/claude-agent-sdk.md](providers/claude-agent-sdk.md).
@@ -443,7 +443,7 @@ summaries exactly when long runs need them, so the nested run inherits the paren
 - [Experimental providers](../providers/experimental.md) (carve-outs, promotion criteria)
 - [Provider comparison](../providers/comparison.md), [OpenAI](../providers/openai.md),
   [Hermes](../providers/hermes.md), [ACA](../providers/aca.md),
-  [Claude](../providers/claude-provider.md)
+  [Claude](../providers/claude-provider.md), [pi](../providers/pi.md)
 - [Configuration: field compatibility](../configuration.md#field-compatibility-by-provider),
   [reasoning effort](../configuration.md#reasoning-effort)
 - [MCP tools: tool output limits](../mcp-tools.md#tool-output-limits), [telemetry](../telemetry.md)

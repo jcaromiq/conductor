@@ -25,6 +25,7 @@ from conductor.providers.context_tier import ContextTier
 from conductor.providers.copilot import CopilotProvider, IdleRecoveryConfig
 from conductor.providers.hermes import HERMES_SDK_AVAILABLE, HermesProvider
 from conductor.providers.openai import OPENAI_SDK_AVAILABLE, OpenAIProvider
+from conductor.providers.pi import PI_AVAILABLE, PiProvider
 from conductor.providers.reasoning import ReasoningEffort
 
 if TYPE_CHECKING:
@@ -242,6 +243,34 @@ async def create_provider(
                 skip_memory=hermes_skip_memory,
                 skip_context_files=hermes_skip_context_files,
                 max_agent_iterations=max_agent_iterations,
+                max_session_seconds=max_session_seconds,
+                default_reasoning_effort=default_reasoning_effort,
+            )
+        case "pi":
+            if not PI_AVAILABLE:
+                raise ProviderError(
+                    "pi provider requires the pi CLI on PATH",
+                    suggestion=(
+                        "Install pi (https://pi.dev) and log in with `pi auth login` "
+                        "so it can run its own configured model providers."
+                    ),
+                )
+            if temperature is not None:
+                raise ProviderError(
+                    f"pi does not support `temperature` (received {temperature!r}).",
+                    suggestion=(
+                        "Remove `runtime.temperature` for workflows that use the pi provider."
+                    ),
+                )
+            if max_tokens is not None:
+                raise ProviderError(
+                    f"pi does not support `max_tokens` (received {max_tokens!r}).",
+                    suggestion=(
+                        "Remove `runtime.max_tokens` for workflows that use the pi provider."
+                    ),
+                )
+            provider = PiProvider(
+                model=default_model,
                 max_session_seconds=max_session_seconds,
                 default_reasoning_effort=default_reasoning_effort,
             )

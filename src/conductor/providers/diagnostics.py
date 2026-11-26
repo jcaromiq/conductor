@@ -119,6 +119,12 @@ _CREDENTIAL_SPECS: dict[str, _CredentialSpec] = {
     ),
     "openai": _CredentialSpec(env_vars=("OPENAI_API_KEY",)),
     "hermes": _CredentialSpec(),
+    "pi": _CredentialSpec(
+        optional_auth_note=(
+            "authenticates via `pi auth login` (credentials in ~/.pi/agent/auth.json); "
+            "pi resolves its own model providers, so no environment variable applies"
+        )
+    ),
 }
 
 # Update-check opt-out env var (mirrors cli/update.py so diagnostics does not
@@ -498,6 +504,10 @@ def _sdk_available(name: str) -> bool:
             from conductor.providers.hermes import HERMES_SDK_AVAILABLE
 
             return HERMES_SDK_AVAILABLE
+        if name == "pi":
+            from conductor.providers.pi import PI_AVAILABLE
+
+            return PI_AVAILABLE
     except Exception:  # noqa: BLE001 - diagnostics must never raise
         return False
     return False
